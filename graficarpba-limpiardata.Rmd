@@ -1,0 +1,129 @@
+---
+title: "Untitled"
+output: html_document
+date: "2025-03-06"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+Cargo las librerías
+```{r}
+library(tidyverse) 
+library(data.table) 
+library(dplyr) 
+library(ggplot2)
+library(ggpol)
+```
+Abro el archivo CSV
+```{r}
+df<-fread("concejales2025-marzo.csv", encoding = "UTF-8")
+```
+
+Hago el longer para ir dando forma al archivo
+```{r}
+df_longer<-df %>% pivot_longer(!Municipalidad, names_to = "Alianza", values_to = "Bancas")
+
+```
+
+```{r}
+
+head(df_longer)
+
+```
+Saco las bancas en 0
+```{r}
+
+df_sin0 <- filter(df_longer, Bancas !="0")
+
+```
+
+```{r}
+head(df_sin0)
+```
+
+Ahora voy a tratar de editar los nombres de algunas alianzas para que queden más cortos. Primero busco los nombres de las alianzas.
+```{r}
+unique(df_sin0$Alianza)
+
+```
+
+
+Ahora que ya tengo los nombres lo que puedo hacer es buscarlos para reemplazarlos.
+
+```{r}
+df_nombrescortos<-df_sin0 %>% mutate(Alianza = case_when(
+  Alianza=="UCR Evolución" ~ "UCR DxS",
+  Alianza== "Unión, Renovación y Fé" ~ "URyF",
+  Alianza == "Justicialismo no UXP" ~ "Peronismo no UxP",
+  Alianza == "Partido Socialista" ~ "PS", 
+  Alianza == "Vecinalismo" ~ "Vecinal",
+  TRUE ~ Alianza #Mantiene el resto igual
+))
+```
+
+
+Chequeo que haya salido bien
+```{r}
+
+unique(df_nombrescortos$Alianza)
+
+```
+
+
+Acá tengo que ir preparando la columna de colores
+```{r}
+
+df_colores <- df_nombrescortos %>% mutate(Colores= case_when(
+  Alianza == "UxP" ~ as.character("mediumaquamarine"),
+  Alianza == "Juntos" ~ as.character("darkorange"),
+  Alianza == "LLA" ~ as.character("purple"),
+  Alianza == "UCR DxS" ~ as.character("hotpink"),
+  Alianza == "PRO" ~ as.character("yellow"),
+  Alianza == "PS" ~ as.character("mistyrose"),
+  Alianza == "UCR" ~ as.character("red"),
+  Alianza == "Peronismo no UxP" ~ as.character("dimgrey"),
+  Alianza == "URyF" ~ as.character("steelblue"),
+  Alianza == "LLA Disidente" ~ as.character( "chocolate"),
+  Alianza == "Vecinal" ~ as.character("black"),
+  Alianza == "PRO PB" ~ as.character("darkgoldenrod"),
+  Alianza == "UCR Disidente" ~ as.character("darkred"),
+  Alianza == "GEN" ~ as.character("deeppink"),
+  Alianza == "UxP Disidente" ~ as.character("navy"),
+  Alianza == "FIT" ~ as.character("red3"),
+  Alianza == "Unión Liberal" ~ as.character("darkgreen"),
+  Alianza == "PRO Disidente" ~ as.character("limegreen"),
+  Alianza == "CC ARI" ~ as.character("tomato"),
+  Alianza == "Juntos Disidente" ~ as.character("orangered"),
+  Alianza == "Cambio Federal" ~ as.character("darkolivegreen"),
+  Alianza == "SN" ~ as.character("khaki"),
+  Alianza == "MID" ~ as.character("darkslategrey"),
+  TRUE~ "PRUEBA"
+  
+))
+
+
+```
+
+
+Ahora agrego la columna ediles, donde se combina el texto de Alianza con la cantidad de bancas.
+```{r}
+hcd202501<-df_colores
+
+hcd202501$Ediles <- paste0(df_colores$Alianza," (",df_colores$Bancas,")" )
+
+
+```
+
+Esto ya estaría así que voy a exportar el CSV.
+```{r}
+write.csv(hcd202501,"hcd202501.csv", row.names = FALSE)
+```
+
